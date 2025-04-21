@@ -23,7 +23,10 @@ $(SRC_AUTO_BIND): $(NXDC_FILES)
 # project source
 VSRCS = $(shell find $(abspath ./$(A)/vsrc) -name "*.v")
 CSRCS = $(shell find $(abspath ./$(A)/csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
+
+ifeq ($(findstring run,$(MAKECMDGOALS)),run)
 CSRCS += $(SRC_AUTO_BIND)
+endif
 
 # rules for NVBoard
 include $(NVBOARD_HOME)/scripts/nvboard.mk
