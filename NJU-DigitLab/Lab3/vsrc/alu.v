@@ -18,46 +18,29 @@ module alu(a, b, sel, r, zf, of, cf);
   );
 
   always @(a or b or sel or add_result or add_cf or b_in) begin
-      zf = 0;
-      of = 0;
-      cf = 0;
-      case (sel)
-          3'b000: begin
-              r = add_result;
-              cf = add_cf;
-              of = (a[3] == b[3]) & (a[3] != r[3]);
-              zf = ~|r;
-          end
-          3'b001: begin
-              r = add_result;
-              cf = add_cf;
-              of = (a[3] != b[3]) & (a[3] != r[3]);
-              zf = ~|r;
-          end
-          3'b010: begin
-              r = a ^ 1;
-              zf = ~|r;
-          end
-          3'b011: begin
-              r = a & b;
-              zf = ~|r;
-          end
-          3'b100: begin
-              r = a | b;
-              zf = ~|r;
-          end
-          3'b101: begin
-              r = a ^ b;
-              zf = ~|r;
-          end
-          3'b110: begin
-              r = a < b ? 4'b0001 : 4'b0000;
-              zf = ~|r;
-          end
-          3'b111: begin
-              r = a == b ? 4'b0001 : 4'b0000;
-              zf = ~|r;
-          end
-      endcase
+    zf = 0;
+    of = 0;
+    cf = 0;
+
+    case (sel)
+      3'b000: begin
+        r = add_result;
+        cf = add_cf;
+        of = (a[3] == b[3]) & (a[3] != r[3]);
+      end
+      3'b001: begin
+        r = add_result;
+        cf = add_cf;
+        of = (a[3] != b[3]) & (a[3] != r[3]);
+      end
+      3'b010: r = a ^ 1;
+      3'b011: r = a & b;
+      3'b100: r = a | b;
+      3'b101: r = a ^ b;
+      3'b110: r = a < b ? 4'b0001 : 4'b0000;
+      3'b111: r = a == b ? 4'b0001 : 4'b0000;
+    endcase
+
+    zf = ~|r;
   end
 endmodule
