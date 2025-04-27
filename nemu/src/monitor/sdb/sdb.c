@@ -18,6 +18,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include "debug.h"
 
 static int is_batch_mode = false;
 
@@ -49,7 +50,25 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
+  nemu_state.state = NEMU_QUIT;
   return -1;
+}
+
+static int cmd_si(char *args) {
+  int count = args == NULL ? 1 : atoi(args);
+  cpu_exec(count);
+  return 0;
+}
+
+static int cmd_info(char *args) {
+  if (!strcmp(args, "r")) {
+    isa_reg_display();
+  } else if (!strcmp(args, "w")) {
+
+  } else {
+    Assert(0, "[sdb/cmd_info]: Invalid param!");
+  }
+  return 0;
 }
 
 static int cmd_help(char *args);
@@ -62,9 +81,8 @@ static struct {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
-
-  /* TODO: Add more commands */
-
+  {"si", "Execute a command", cmd_si},
+  {"info", "Print the info of reg/watchpoint", cmd_info}
 };
 
 #define NR_CMD ARRLEN(cmd_table)
