@@ -127,6 +127,10 @@ endmenu
 menu "Testing and Debugging"
 
 
+config TEST_EXPR
+  bool "Test expression"
+  default n
+
 config TRACE
   bool "Enable tracer"
   default y

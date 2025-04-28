@@ -71,6 +71,22 @@ static int cmd_info(char *args) {
   return 0;
 }
 
+static int cmd_p(char *args) {
+  bool success = true;
+  int value = expr(args, &success);
+  if (success) {
+    printf("value: %u\n", value);
+  }
+  else {
+    Log("Print value failed!");
+  }
+  return 0;
+}
+
+static int cmd_x(char *args) {
+  return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -82,7 +98,9 @@ static struct {
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
   {"si", "Execute a command", cmd_si},
-  {"info", "Print the info of reg/watchpoint", cmd_info}
+  {"info", "Print the info of reg/watchpoint", cmd_info},
+  {"p", "Print the value of the expression", cmd_p},
+  {"x", "Scan N consecutive bytes", cmd_x}
 };
 
 #define NR_CMD ARRLEN(cmd_table)

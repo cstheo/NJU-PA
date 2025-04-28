@@ -34,6 +34,11 @@ void isa_reg_display() {
   }
 }
 
-word_t isa_reg_str2val(const char *s, bool *success) {
-  return 0;
+word_t isa_reg_str2val(const char *s) {
+  for (int i = 0; i < MUXDEF(CONFIG_RVE, 16, 32); i++) {
+    if ((s[0] == '$' && strcmp(s+1, reg_name(i)) == 0) || strcmp(s, reg_name(0)) == 0) {
+      return gpr(i);
+    }
+  }
+  Assert(0, "[reg/isa_reg_str2val]: Invalid reg: %s", s);
 }
