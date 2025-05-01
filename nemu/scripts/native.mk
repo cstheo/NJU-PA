@@ -47,4 +47,6 @@ $(clean-tools):
 clean-tools: $(clean-tools)
 clean-all: clean distclean clean-tools
 
-.PHONY: run gdb run-env clean-tools clean-all $(clean-tools)
+count:
+	find ./src ./include -type f \( -name "*.c" -o -name "*.h" \) | xargs wc -l
+.PHONY: run gdb run-env clean-tools clean-all $(clean-tools) count

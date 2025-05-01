@@ -17,6 +17,7 @@
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <memory/vaddr.h>
 #include "sdb.h"
 #include "debug.h"
 
@@ -64,7 +65,7 @@ static int cmd_info(char *args) {
   if (!strcmp(args, "r")) {
     isa_reg_display();
   } else if (!strcmp(args, "w")) {
-
+    show_wp();
   } else {
     Assert(0, "[sdb/cmd_info]: Invalid param!");
   }
@@ -78,12 +79,49 @@ static int cmd_p(char *args) {
     printf("value: %u\n", value);
   }
   else {
-    Log("Print value failed!");
+    Log(ANSI_FMT("Print value failed!", ANSI_FG_RED));
   }
   return 0;
 }
 
 static int cmd_x(char *args) {
+  Assert(args != NULL, "[sdb/cmd_x]: Cmd_x args shoudn't be null");
+  char *arg0 = strtok(args, " ");
+  char *arg1 = arg0 + strlen(arg0) + 1;
+  int64_t count = strtol(arg0, NULL, 0);
+
+  bool success = true;
+  int value = expr(arg1, &success);
+  if (!success) {
+    Log(ANSI_FMT("Print value failed!", ANSI_FG_RED));
+    return 0;
+  }
+  while (count--) {
+    printf(""FMT_PADDR":  ", value);
+    for (int i = sizeof(word_t) - 1; i >= 0; i--) {
+      printf("%02x  ", vaddr_read(value + i, 1));
+    }
+    printf("\n");
+    value += sizeof(word_t);
+  }
+  return 0;
+}
+
+static int cmd_w(char *args) {
+#ifdef CONFIG_WATCHPOINT
+  set_wp(args);
+#else 
+  printf(ANSI_FMT("[sdb/cmd_w]: No support watchpoint\n", ANSI_FG_RED));
+#endif
+  return 0;
+}
+
+static int cmd_d(char *args) {
+#ifdef CONFIG_WATCHPOINT
+  free_wp(atoi(args));
+#else 
+  printf(ANSI_FMT("[sdb/cmd_d]: No support watchpoint\n", ANSI_FG_RED));
+#endif
   return 0;
 }
 
@@ -100,7 +138,9 @@ static struct {
   {"si", "Execute a command", cmd_si},
   {"info", "Print the info of reg/watchpoint", cmd_info},
   {"p", "Print the value of the expression", cmd_p},
-  {"x", "Scan N consecutive bytes", cmd_x}
+  {"x", "Scan N consecutive bytes", cmd_x},
+  {"w", "Set a new watchpoint", cmd_w},
+  {"d", "Delete a watchpoint", cmd_d}
 };
 
 #define NR_CMD ARRLEN(cmd_table)

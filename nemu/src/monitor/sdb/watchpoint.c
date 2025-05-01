@@ -21,8 +21,8 @@ typedef struct watchpoint {
   int NO;
   struct watchpoint *next;
 
-  /* TODO: Add more members if necessary */
-
+  char expression[WORD_SIZE_BITS];
+  word_t old_value;
 } WP;
 
 static WP wp_pool[NR_WP] = {};
@@ -39,5 +39,75 @@ void init_wp_pool() {
   free_ = wp_pool;
 }
 
-/* TODO: Implement the functionality of watchpoint */
+WP* new_wp() {
+  if (free_ == NULL) {
+    Log(ANSI_FMT("No free watchpoint!", ANSI_FG_RED));
+    return NULL;
+  }
+  WP *wp = free_;
+  free_ = free_->next;
+  wp->next = head;
+  head = wp;
+  return wp;
+}
 
+bool set_wp(char *args) {
+  WP *wp;
+  bool success = false;
+  word_t value = expr(args, &success);
+  if (!success) {
+    printf(ANSI_FMT("[sdb/set_wp]: Invalid Input!\n", ANSI_FG_RED));
+    return false;
+  }
+  if (!(wp = new_wp())) {
+    printf(ANSI_FMT("[sdb/set_wp]: No free watchpoint!\n", ANSI_FG_RED));
+    return false;
+  }
+
+  strcpy(wp->expression, args);
+  wp->old_value = value;
+  return true;
+}
+
+bool free_wp(int NO) {
+  WP *pre = head;
+  WP *current = head;
+  while (current->NO != NO) {
+    pre = current;
+    current = current->next;
+  }
+  if (current->NO != NO) {
+    printf(ANSI_FMT("[sdb/free_wp]: Invalid watchpoint NO!\n", ANSI_FG_RED));
+    return false;
+  }
+  current == head ? (head = current->next) : (pre->next = current->next);
+
+  current->next = free_;
+  free_ = current;
+  return true;
+}
+
+void show_wp() {
+  WP *current = head;
+  printf("%2s     %18s     %5s\n", "ID", "expression", "value");
+  while (current != NULL) {
+    printf("%2d     %18s     %5d\n", current->NO, current->expression, current->old_value);
+    current = current->next;
+  }
+}
+
+bool check_wp() {
+  WP *current = head;
+  bool hit = false;
+  while (current != NULL) {
+    bool success = false;
+    word_t new_value = expr(current->expression, &success);
+    if (new_value != current->old_value) {
+      printf("Hit watchpoint\n");
+      printf("%2d     %18s     %5d\n", current->NO, current->expression, current->old_value);
+      hit = true;
+    }
+    current = current->next;
+  }
+  return hit;
+}

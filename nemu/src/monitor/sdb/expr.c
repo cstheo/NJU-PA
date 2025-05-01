@@ -14,17 +14,15 @@
  ***************************************************************************************/
 
 #include <isa.h>
-
-/* We use the POSIX regex functions to process regular expressions.
- * Type 'man regex' for more information about POSIX regex functions.
- */
+#include <memory/vaddr.h>
 #include <debug.h>
 #include <regex.h>
 
-#define TOKEN_MAX 4096
+#define TOKEN_MAX 256
+#define TOKEN_BASE 256
 
 enum {
-  TK_NOTYPE = 256,  
+  TK_NOTYPE = TOKEN_BASE,  
   
   TK_NUM,    // num
   TK_HEX,    // 0x
@@ -33,6 +31,7 @@ enum {
   TK_RP,     // )
   
   TK_MINUS, // -num
+  TK_DEREF, // *(expr)
   
   TK_MUL,   // *
   TK_DIV,   // /
@@ -84,8 +83,8 @@ static struct rule {
 };
 
 #define NR_REGEX ARRLEN(rules)
-static int priority[NR_REGEX+1] = {
-  0, 1, 1, 1, 0, 0, 1,
+static int priority[NR_REGEX+2] = {
+  0, 1, 1, 1, 0, 0, 1, 2,
   2, 2, 2, 3, 3, 4, 4,
   4, 4, 5, 5, 6, 7,
 };
@@ -111,7 +110,7 @@ void init_regex() {
 
 typedef struct token {
   int type;
-  char str[32];
+  char str[WORD_SIZE_BITS];
 } Token;
 
 static Token tokens[TOKEN_MAX] __attribute__((used)) = {};
@@ -131,7 +130,7 @@ static bool make_token(char *e) {
           pmatch.rm_so == 0) {
         char *substr_start = e + position;
         int substr_len = pmatch.rm_eo;
-        Assert(substr_len < 32, "[sdb/make_token]: Too long arg!");
+        Assert(substr_len < 8 * WORD_SIZE_BITS, "[sdb/make_token]: Too long arg!");
 
         Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s", i,
             rules[i].regex, position, substr_len, substr_len, substr_start);
@@ -159,12 +158,13 @@ static bool make_token(char *e) {
   }
 
   for (int i = 0; i < nr_token; i++) {
-    if (tokens[i].type == TK_SUB && (i == 0 || 
-        (tokens[i-1].type != TK_NUM && 
-         tokens[i-1].type != TK_HEX && 
-         tokens[i-1].type != TK_REG && 
-         tokens[i-1].type != TK_RP))) {
+    if (tokens[i].type == TK_SUB && (i == 0 || (tokens[i-1].type != TK_NUM && tokens[i-1].type != TK_HEX && 
+         tokens[i-1].type != TK_REG && tokens[i-1].type != TK_RP))) {
       tokens[i].type = TK_MINUS;
+    }
+    if (tokens[i].type == TK_MUL && (i == 0 || (tokens[i-1].type != TK_NUM && tokens[i-1].type != TK_HEX && 
+         tokens[i-1].type != TK_REG && tokens[i-1].type != TK_RP))) {
+      tokens[i].type = TK_DEREF;
     }
   }
   return true;
@@ -210,7 +210,7 @@ static int get_op(int left, int right) {
         }
       }
     }
-    if (priority[tokens[i].type - 256] >= priority[tokens[op].type - 256]) {
+    if (priority[tokens[i].type - TOKEN_BASE] >= priority[tokens[op].type - TOKEN_BASE]) {
       op = i;
     }
   }
@@ -236,7 +236,7 @@ static word_t eval(int left, int right) {
   else {
     int op = get_op(left, right);
     Log("op: %d", op);
-    int val1 = tokens[op].type != TK_MINUS ? eval(left, op - 1) : 0;
+    int val1 = tokens[op].type != TK_MINUS  && tokens[op].type != TK_DEREF ? eval(left, op - 1) : 0;
     int val2 = eval(op + 1, right);
 
     switch (tokens[op].type) {
@@ -251,6 +251,7 @@ static word_t eval(int left, int right) {
       case TK_NUM: Assert(0, "[sdb/eval]: Invalid Type: TK_NUM");
       case TK_HEX: Assert(0, "[sdb/eval]: Invalid Type: TK_HEX");
       case TK_MINUS: return -val2;
+      case TK_DEREF: return vaddr_read(val2, WORD_SIZE_BYTE);
       case TK_REG: Assert(0, "[sdb/eval]: Invalid Type: TK_REG");
       case TK_PLUS: return val1 + val2;
       case TK_SUB: return val1 - val2;
@@ -278,5 +279,6 @@ word_t expr(char *e, bool *success) {
     return 0;
   }
 
+  *success = true;
   return eval(0, nr_token-1);
 }

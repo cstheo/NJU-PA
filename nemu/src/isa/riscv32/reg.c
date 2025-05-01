@@ -40,5 +40,8 @@ word_t isa_reg_str2val(const char *s) {
       return gpr(i);
     }
   }
+  if (s[0] == '$' && strcmp(s+1, "pc") == 0) {
+    return cpu.pc;
+  }
   Assert(0, "[reg/isa_reg_str2val]: Invalid reg: %s", s);
 }
