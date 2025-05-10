@@ -87,10 +87,10 @@ static void gen_rand_expr() {
   }
   
   curr_depth++;
-  switch (choose(3)) {
+  switch (choose(4)) {
     case 0: gen_num(); break;
     case 1: gen('('); gen_rand_expr(); gen(')'); break;
-    default: gen('('); gen_rand_expr(); gen(')'); gen_rand_op(); gen('('); gen_rand_expr(); gen(')'); break;
+    default: gen_rand_expr(); gen_rand_op(); gen_rand_expr(); break;
   }
   curr_depth--;
 }

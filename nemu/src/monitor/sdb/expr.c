@@ -18,7 +18,7 @@
 #include <debug.h>
 #include <regex.h>
 
-#define TOKEN_MAX 256
+#define TOKEN_MAX 4096
 #define TOKEN_BASE 256
 
 enum {
