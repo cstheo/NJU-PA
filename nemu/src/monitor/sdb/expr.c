@@ -248,27 +248,27 @@ static word_t eval(int left, int right) {
       case TK_GT: return val1 > val2;
       case TK_AND: return val1 && val2; 
       case TK_OR: return val1 || val2;
-      case TK_NUM: Assert(0, "[sdb/eval]: Invalid Type: TK_NUM");
-      case TK_HEX: Assert(0, "[sdb/eval]: Invalid Type: TK_HEX");
+      case TK_NUM: panic("[sdb/eval]: Invalid Type: TK_NUM");
+      case TK_HEX: panic("[sdb/eval]: Invalid Type: TK_HEX");
       case TK_MINUS: return -val2;
       case TK_DEREF: return vaddr_read(val2, WORD_SIZE_BYTE);
-      case TK_REG: Assert(0, "[sdb/eval]: Invalid Type: TK_REG");
+      case TK_REG: panic("[sdb/eval]: Invalid Type: TK_REG");
       case TK_PLUS: return val1 + val2;
       case TK_SUB: return val1 - val2;
       case TK_MUL: return val1 * val2;
       case TK_DIV: 
         if (val2 == 0) {
-          Assert(0, "[sdb/eval]: Division by zero");
+          panic("[sdb/eval]: Division by zero");
         }
         return val1 / val2;
       case TK_MOD: 
         if (val2 == 0) {
-          Assert(0, "[sdb/eval]: Modulo by zero");
+          panic("[sdb/eval]: Modulo by zero");
         }
         return val1 % val2;
-      case TK_LP: Assert(0, "[sdb/eval]: Invalid Type: TK_LP");
-      case TK_RP: Assert(0, "[sdb/eval]: Invalid Type: TK_RP");
-      default: Assert(0, "[sdb/eval]: Unexpected behavior: Invalid Type: %d",tokens[op].type);
+      case TK_LP: panic("[sdb/eval]: Invalid Type: TK_LP");
+      case TK_RP: panic("[sdb/eval]: Invalid Type: TK_RP");
+      default: panic("[sdb/eval]: Unexpected behavior: Invalid Type: %d",tokens[op].type);
     }
   }
 }

@@ -41,7 +41,7 @@ void init_wp_pool() {
 
 WP* new_wp() {
   if (free_ == NULL) {
-    Log(ANSI_FMT("No free watchpoint!", ANSI_FG_RED));
+    Error("No free watchpoint!");
     return NULL;
   }
   WP *wp = free_;
@@ -56,11 +56,11 @@ bool set_wp(char *args) {
   bool success = false;
   word_t value = expr(args, &success);
   if (!success) {
-    printf(ANSI_FMT("[sdb/set_wp]: Invalid Input!\n", ANSI_FG_RED));
+    Error("[sdb/set_wp]: Invalid Input!\n");
     return false;
   }
   if (!(wp = new_wp())) {
-    printf(ANSI_FMT("[sdb/set_wp]: No free watchpoint!\n", ANSI_FG_RED));
+    Error("[sdb/set_wp]: No free watchpoint!\n");
     return false;
   }
 
@@ -77,7 +77,7 @@ bool free_wp(int NO) {
     current = current->next;
   }
   if (current->NO != NO) {
-    printf(ANSI_FMT("[sdb/free_wp]: Invalid watchpoint NO!\n", ANSI_FG_RED));
+    Error("[sdb/free_wp]: Invalid watchpoint NO!\n");
     return false;
   }
   current == head ? (head = current->next) : (pre->next = current->next);

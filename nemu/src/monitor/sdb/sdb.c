@@ -67,7 +67,7 @@ static int cmd_info(char *args) {
   } else if (!strcmp(args, "w")) {
     show_wp();
   } else {
-    Assert(0, "[sdb/cmd_info]: Invalid param!");
+    panic("[sdb/cmd_info]: Invalid param!");
   }
   return 0;
 }
@@ -79,7 +79,7 @@ static int cmd_p(char *args) {
     printf("value: %u\n", value);
   }
   else {
-    Log(ANSI_FMT("Print value failed!", ANSI_FG_RED));
+    Error("Print value failed!");
   }
   return 0;
 }
@@ -93,7 +93,7 @@ static int cmd_x(char *args) {
   bool success = true;
   int value = expr(arg1, &success);
   if (!success) {
-    Log(ANSI_FMT("Print value failed!", ANSI_FG_RED));
+    Error("Print value failed!");
     return 0;
   }
   while (count--) {
@@ -111,7 +111,7 @@ static int cmd_w(char *args) {
 #ifdef CONFIG_WATCHPOINT
   set_wp(args);
 #else 
-  printf(ANSI_FMT("[sdb/cmd_w]: No support watchpoint\n", ANSI_FG_RED));
+  Error("[sdb/cmd_w]: No support watchpoint\n");
 #endif
   return 0;
 }
@@ -120,7 +120,7 @@ static int cmd_d(char *args) {
 #ifdef CONFIG_WATCHPOINT
   free_wp(atoi(args));
 #else 
-  printf(ANSI_FMT("[sdb/cmd_d]: No support watchpoint\n", ANSI_FG_RED));
+  Error("[sdb/cmd_d]: No support watchpoint\n");
 #endif
   return 0;
 }
