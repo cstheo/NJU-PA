@@ -20,6 +20,7 @@
 #include <memory/vaddr.h>
 #include "sdb.h"
 #include "debug.h"
+#include "tracer.h"
 
 static int is_batch_mode = false;
 
@@ -111,7 +112,7 @@ static int cmd_w(char *args) {
 #ifdef CONFIG_WATCHPOINT
   set_wp(args);
 #else 
-  Error("[sdb/cmd_w]: No support watchpoint\n");
+  Error("[sdb/cmd_w]: No support watchpoint");
 #endif
   return 0;
 }
@@ -120,7 +121,25 @@ static int cmd_d(char *args) {
 #ifdef CONFIG_WATCHPOINT
   free_wp(atoi(args));
 #else 
-  Error("[sdb/cmd_d]: No support watchpoint\n");
+  Error("[sdb/cmd_d]: No support watchpoint");
+#endif
+  return 0;
+}
+
+static int cmd_itrace(char *args) {
+#ifdef CONFIG_ITRACE
+  itrace_display();
+#else 
+  Error("[sdb/cmd_itrace]: No support instruction trace");
+#endif
+  return 0;
+}
+
+static int cmd_mtrace(char *args) {
+#ifdef CONFIG_MTRACE
+  mtrace_display();
+#else 
+  Error("[sdb/cmd_mtrace]: No support memory trace");
 #endif
   return 0;
 }
@@ -132,15 +151,17 @@ static struct {
   const char *description;
   int (*handler) (char *);
 } cmd_table [] = {
-  { "help", "Display information about all supported commands", cmd_help },
-  { "c", "Continue the execution of the program", cmd_c },
-  { "q", "Exit NEMU", cmd_q },
+  { "help", "Display information about all supported commands", cmd_help},
+  { "c", "Continue the execution of the program", cmd_c},
+  { "q", "Exit NEMU", cmd_q},
   {"si", "Execute a command", cmd_si},
   {"info", "Print the info of reg/watchpoint", cmd_info},
   {"p", "Print the value of the expression", cmd_p},
   {"x", "Scan N consecutive bytes", cmd_x},
   {"w", "Set a new watchpoint", cmd_w},
-  {"d", "Delete a watchpoint", cmd_d}
+  {"d", "Delete a watchpoint", cmd_d},
+  {"itrace", "display the instruction executed", cmd_itrace},
+  {"mtrace", "display the memory access information", cmd_mtrace}
 };
 
 #define NR_CMD ARRLEN(cmd_table)
