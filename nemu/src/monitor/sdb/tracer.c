@@ -1,8 +1,68 @@
+#include <elf.h>
 #include "common.h"
 #include "tracer.h"
 
+static FuncTracer funcTracer;
 static InstTracer instTracer;
 static MemTracer memTracer;
+
+static FuncEntry *funcEntry;
+
+void ftrace_init(char *str_table, Elf_Sym *sym_table, word_t sym_size) {
+  for (int i = 0; i < sym_size / sizeof(Elf_Sym); i++) {
+    if (ELF_ST_TYPE(sym_table[i].st_info) == STT_FUNC) {
+      if (funcEntry == NULL) {
+        funcEntry = funcTracer.funcs = malloc(sizeof(FuncEntry));
+      } else {
+        funcEntry->next = malloc(sizeof(FuncEntry));
+        funcEntry = funcEntry->next;
+      }
+      funcEntry->addr = sym_table[i].st_value;
+      funcEntry->end = funcEntry->addr + sym_table[i].st_size;
+      funcEntry->name = malloc(strlen(&str_table[sym_table[i].st_name]) + 1);
+      strcpy(funcEntry->name, &str_table[sym_table[i].st_name]);
+    }
+  }
+  funcTracer.inited = true;
+}
+
+void ftrace_insert(paddr_t addr, int type) {
+  if (!funcTracer.inited) return;
+  funcTracer.traces[funcTracer.end].addr = addr;
+  funcTracer.traces[funcTracer.end].type = type;
+  funcTracer.traces[funcTracer.end].pc = cpu.pc;
+  funcTracer.end = (funcTracer.end + 1) % FUNC_TRACER_SIZE;
+  if (funcTracer.end == funcTracer.start) 
+    funcTracer.start = (funcTracer.start + 1) % FUNC_TRACER_SIZE;
+}
+
+void ftrace_display() {
+  int indent = 0;
+  int p = funcTracer.start;
+  while (p != funcTracer.end) {
+    char *name = "\0";
+    struct Trace trace = funcTracer.traces[p];
+    FuncEntry *entry = funcTracer.funcs;
+    while (entry) {
+      if (trace.addr >= entry->addr && trace.addr < entry->end) {
+        name = entry->name;
+        break;
+      }
+      entry = entry->next;
+    }
+    printf(FMT_WORD":", trace.pc);
+    if (trace.type == CALL) {
+      for (int i = 0; i < indent; i++) { putchar(' '); putchar(' '); }
+      indent++;
+      printf("call [%s@"FMT_WORD"]\n", name, trace.addr);
+    } else {
+      if (indent > 0) indent--;
+      for (int i = 0; i < indent; i++) { putchar(' '); putchar(' '); }
+      printf("ret  [%s@"FMT_WORD"]\n", name, trace.addr);
+    }
+    p = (p + 1) % FUNC_TRACER_SIZE;
+  }
+}
 
 void itrace_insert(Decode *s) {
     strcpy(instTracer.inst[instTracer.end], s->logbuf);
@@ -12,10 +72,10 @@ void itrace_insert(Decode *s) {
 }
 
 void itrace_display() {
-  int i = instTracer.start;
-  while (i != instTracer.end) {
-    printf("%s\n", instTracer.inst[i]);
-    i = (i + 1) % INST_TRACER_SIZE;
+  int p = instTracer.start;
+  while (p != instTracer.end) {
+    printf("%s\n", instTracer.inst[p]);
+    p = (p + 1) % INST_TRACER_SIZE;
   }
 }
 

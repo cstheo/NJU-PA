@@ -43,6 +43,8 @@ typedef word_t vaddr_t;
 typedef MUXDEF(PMEM64, uint64_t, uint32_t) paddr_t;
 #define FMT_PADDR MUXDEF(PMEM64, "0x%016" PRIx64, "0x%08" PRIx32)
 typedef uint16_t ioaddr_t;
+
+#define WORD_WIDTH MUXDEF(CONFIG_ISA64, 64, 32)
 #define WORD_SIZE_BYTE sizeof(word_t)
 #define WORD_SIZE_BITS (sizeof(word_t) * 8)
 

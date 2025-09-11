@@ -88,19 +88,19 @@ static int cmd_p(char *args) {
 static int cmd_x(char *args) {
   Assert(args != NULL, "[sdb/cmd_x]: Cmd_x args shoudn't be null");
   char *arg0 = strtok(args, " ");
-  char *arg1 = arg0 + strlen(arg0) + 1;
-  int64_t count = strtol(arg0, NULL, 0);
+  char *arg1 = strtok(NULL, " ");
+  int64_t count = arg1 == NULL ? 1 : strtol(arg0, NULL, 0);
 
   bool success = true;
-  int value = expr(arg1, &success);
+  int value = expr(arg1 == NULL ? arg0 : arg1, &success);
   if (!success) {
     Error("Print value failed!");
     return 0;
   }
   while (count--) {
-    printf(""FMT_PADDR":  ", value);
+    printf(""FMT_PADDR": ", value);
     for (int i = sizeof(word_t) - 1; i >= 0; i--) {
-      printf("%02x  ", vaddr_read(value + i, 1));
+      printf("%02x ", vaddr_read(value + i, 1));
     }
     printf("\n");
     value += sizeof(word_t);
@@ -144,6 +144,15 @@ static int cmd_mtrace(char *args) {
   return 0;
 }
 
+static int cmd_ftrace(char *args) {
+#ifdef CONFIG_FTRACE
+  ftrace_display();
+#else 
+  Error("[sdb/cmd_ftrace]: No support function trace");
+#endif
+  return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -160,8 +169,9 @@ static struct {
   {"x", "Scan N consecutive bytes", cmd_x},
   {"w", "Set a new watchpoint", cmd_w},
   {"d", "Delete a watchpoint", cmd_d},
-  {"itrace", "display the instruction executed", cmd_itrace},
-  {"mtrace", "display the memory access information", cmd_mtrace}
+  {"itrace", "display the instruction trace", cmd_itrace},
+  {"mtrace", "display the memory access trace", cmd_mtrace},
+  {"ftrace", "display the function trace", cmd_ftrace}
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -174,7 +184,7 @@ static int cmd_help(char *args) {
   if (arg == NULL) {
     /* no argument given */
     for (i = 0; i < NR_CMD; i ++) {
-      printf("%s - %s\n", cmd_table[i].name, cmd_table[i].description);
+      printf("%6s - %s\n", cmd_table[i].name, cmd_table[i].description);
     }
   }
   else {
