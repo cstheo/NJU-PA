@@ -2,10 +2,8 @@
 #include "common.h"
 #include "tracer.h"
 
+#ifdef CONFIG_FTRACE
 static FuncTracer funcTracer;
-static InstTracer instTracer;
-static MemTracer memTracer;
-
 static FuncEntry *funcEntry;
 
 void ftrace_init(char *str_table, Elf_Sym *sym_table, word_t sym_size) {
@@ -63,6 +61,10 @@ void ftrace_display() {
     p = (p + 1) % FUNC_TRACER_SIZE;
   }
 }
+#endif
+
+#ifdef CONFIG_ITRACE
+static InstTracer instTracer;
 
 void itrace_insert(Decode *s) {
     strcpy(instTracer.inst[instTracer.end], s->logbuf);
@@ -78,6 +80,10 @@ void itrace_display() {
     p = (p + 1) % INST_TRACER_SIZE;
   }
 }
+#endif
+
+#ifdef CONFIG_MTRACE
+static MemTracer memTracer;
 
 void mtrace_insert(paddr_t addr, int len, int type) {
   memTracer.mem[memTracer.end].addr = addr;
@@ -95,10 +101,40 @@ void mtrace_display() {
     printf(
       "pc=" FMT_WORD " %s addr=" FMT_PADDR " %d bytes\n",
       memTracer.mem[p].pc,
-      memTracer.mem[p].type == MEM_READ ? " read" : "write",
+      memTracer.mem[p].type == READ ? " read" : "write",
       memTracer.mem[p].addr,
       memTracer.mem[p].len
     );
     p = (p + 1) % MEM_TRACER_SIZE;
   }
 }
+#endif
+
+#ifdef CONFIG_DTRACE
+static DevTracer devTracer;
+
+void dtrace_insert(const char *name, word_t data, int type) {
+  devTracer.traces[devTracer.end].name = malloc(strlen(name) + 1);
+  strcpy(devTracer.traces[devTracer.end].name, name);
+  devTracer.traces[devTracer.end].data = data;
+  devTracer.traces[devTracer.end].type = type;
+  devTracer.traces[devTracer.end].pc = cpu.pc;
+  devTracer.end = (devTracer.end + 1) % DEV_TRACER_SIZE;
+  if (devTracer.end == memTracer.start)
+    devTracer.start = (devTracer.start + 1) % DEV_TRACER_SIZE;
+}
+
+void dtrace_display() {
+  int p = devTracer.start;
+  while (p != devTracer.end) {
+    printf(
+      "pc=" FMT_WORD " %s %s %d\n",
+      devTracer.traces[p].pc,
+      devTracer.traces[p].type == READ ? " read" : "write",
+      devTracer.traces[p].name,
+      devTracer.traces[p].data
+    );
+    p = (p + 1) % DEV_TRACER_SIZE;
+  }
+}
+#endif

@@ -47,6 +47,7 @@ static char *img_file = NULL;
 static char *elf_file = NULL;
 static int difftest_port = 1234;
 
+#ifdef CONFIG_ITRACE
 static void load_elf() {
   if (elf_file == NULL) {
     Error("No ELF file is given, disable ftrace!");
@@ -92,6 +93,7 @@ static void load_elf() {
   fclose(fp);
   return;
 }
+#endif
 
 static long load_img() {
   if (img_file == NULL) {

@@ -8,6 +8,7 @@
 #define FUNC_TRACER_SIZE 4096
 #define INST_TRACER_SIZE 32
 #define MEM_TRACER_SIZE  32
+#define DEV_TRACER_SIZE  32
 
 static const char ELF_MAGIC_NUMBER[] = {0x7f, 'E', 'L', 'F'};
 
@@ -24,9 +25,9 @@ enum FUNC_OP {
   RET,
 };
 
-enum MEM_OP {
-  MEM_READ,
-  MEM_WRITE,
+enum RW_OP {
+  READ,
+  WRITE,
 };
 
 typedef struct FuncEntry {
@@ -62,6 +63,16 @@ typedef struct {
   } mem[MEM_TRACER_SIZE];
 } MemTracer;
 
+typedef struct {
+  int start, end;
+  struct {
+    char *name;
+    word_t data;
+    int type;
+    word_t pc;
+  } traces[DEV_TRACER_SIZE];
+} DevTracer;
+
 void ftrace_init(char *, Elf_Sym *, word_t);
 void ftrace_insert(paddr_t, int);
 void ftrace_display();
@@ -72,4 +83,6 @@ void itrace_display();
 void mtrace_insert(paddr_t, int, int);
 void mtrace_display();
 
+void dtrace_insert(const char *, word_t, int);
+void dtrace_display();
 #endif

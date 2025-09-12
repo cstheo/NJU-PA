@@ -153,6 +153,15 @@ static int cmd_ftrace(char *args) {
   return 0;
 }
 
+static int cmd_dtrace(char *args) {
+#ifdef CONFIG_DTRACE
+  dtrace_display();
+#else 
+  Error("[sdb/cmd_dtrace]: No support device trace");
+#endif
+  return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -171,7 +180,8 @@ static struct {
   {"d", "Delete a watchpoint", cmd_d},
   {"itrace", "display the instruction trace", cmd_itrace},
   {"mtrace", "display the memory access trace", cmd_mtrace},
-  {"ftrace", "display the function trace", cmd_ftrace}
+  {"ftrace", "display the function trace", cmd_ftrace},
+  {"dtrace", "display the device trace", cmd_dtrace}
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -242,6 +252,10 @@ void sdb_mainloop() {
 }
 
 void init_sdb() {
+#ifdef CONFIG_TEST_EXPR
+  /* Test the expresston eval */
+  test_expr();
+#endif
   /* Compile the regular expressions. */
   init_regex();
 
