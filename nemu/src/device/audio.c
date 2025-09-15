@@ -29,8 +29,40 @@ enum {
 
 static uint8_t *sbuf = NULL;
 static uint32_t *audio_base = NULL;
+static int sbuf_ptr = 0;
+static SDL_AudioSpec s = {};
+
+void audio_callback(void *_userdata, Uint8 *stream, int len) {
+  int to_read = audio_base[reg_count] > len ? len : audio_base[reg_count];
+  for (int i = 0; i < to_read; i++) {
+    stream[i] = sbuf[sbuf_ptr];
+    sbuf_ptr = (sbuf_ptr + 1) % CONFIG_SB_SIZE;
+  }
+  
+  // FIXME: The sub should be atomic
+  audio_base[reg_count] -= to_read;
+  memset(stream + to_read, 0, len - to_read);
+}
+
+static void init_audio_sys() {
+  s.format = AUDIO_S16SYS;
+  s.userdata = NULL;
+  s.freq = audio_base[reg_freq];
+  s.channels = audio_base[reg_channels];
+  s.samples = audio_base[reg_samples];
+  s.callback = audio_callback;
+  SDL_InitSubSystem(SDL_INIT_AUDIO);
+  SDL_OpenAudio(&s, NULL);
+  SDL_PauseAudio(0);
+}
 
 static void audio_io_handler(uint32_t offset, int len, bool is_write) {
+  int reg = offset / 4;
+  Assert(reg < nr_reg, "Invalid audio reg");
+
+  if (is_write && reg == reg_init && audio_base[reg_init] == 1) {
+    init_audio_sys();
+  }
 }
 
 void init_audio() {
@@ -43,5 +75,6 @@ void init_audio() {
 #endif
 
   sbuf = (uint8_t *)new_space(CONFIG_SB_SIZE);
+  audio_base[reg_sbuf_size] = CONFIG_SB_SIZE;
   add_mmio_map("audio-sbuf", CONFIG_SB_ADDR, sbuf, CONFIG_SB_SIZE, NULL);
 }
