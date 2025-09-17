@@ -20,7 +20,13 @@
 
 typedef struct {
   word_t gpr[MUXDEF(CONFIG_RVE, 16, 32)];
+  word_t mcause, mstatus, mepc, mtvec, satp;
   vaddr_t pc;
+  enum {
+    UMODE = 0b00,
+    SMODE = 0b01,
+    MMODE = 0b11,
+  } priv;
 } MUXDEF(CONFIG_RV64, riscv64_CPU_state, riscv32_CPU_state);
 
 // decode

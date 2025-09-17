@@ -20,9 +20,31 @@
 #include <cpu/decode.h>
 
 #define R(i) gpr(i)
+#define CSR(addr) csr(addr)
 #define Mr vaddr_read
 #define Mw vaddr_write
 #define SHAMT(i) (i & 0x1f)
+
+static word_t ecall(vaddr_t epc) {
+ switch(cpu.priv) {
+  case UMODE: return isa_raise_intr(8, epc);
+  case SMODE: return isa_raise_intr(9, epc);
+  case MMODE: return isa_raise_intr(11, epc);
+  default: panic("unknow privilege mode %d", cpu.priv);
+ }
+ return 0;
+}
+#define ECALL(epc) ecall(epc)
+
+static vaddr_t mret() {
+  // mstatus_t* mstatus = (mstatus_t*)&cpu.mstatus;
+  // cpu.priv = mstatus->mpp;
+  // mstatus->mpp = UMODE;
+  // mstatus->mie = mstatus->mpie;
+  // mstatus->mpie = 1;
+  return cpu.mepc + 4;
+}
+#define MRET() mret()
 
 enum {
   TYPE_I, TYPE_U, TYPE_S,
@@ -93,6 +115,9 @@ static int decode_exec(Decode *s) {
     ftrace_insert(s->dnpc, CALL)
   #endif
   );
+  INSTPAT("??????? ????? ????? 001 ????? 11100 11", csrrw  , I, R(rd) = CSR(imm); CSR(imm) = src1);
+  INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, R(rd) = CSR(imm); CSR(imm) |= src1);
+  INSTPAT("??????? ????? ????? 011 ????? 11100 11", csrrc  , I, R(rd) = CSR(imm); CSR(imm) &= ~src1);
   // R-type
   INSTPAT("0000000 ????? ????? 000 ????? 01100 11", add    , R, R(rd) = src1 + src2);
   INSTPAT("0100000 ????? ????? 000 ????? 01100 11", sub    , R, R(rd) = src1 - src2);
@@ -130,6 +155,9 @@ static int decode_exec(Decode *s) {
   );
   // N-type
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0
+  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , N, s->dnpc = ECALL(s->pc));
+  /* Machine-Mode Privileged Instructions */
+  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , R, s->dnpc = MRET());
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));
   INSTPAT_END();
 
