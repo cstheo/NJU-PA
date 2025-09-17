@@ -65,7 +65,7 @@ int _open(const char *path, int flags, mode_t mode) {
   return 0;
 }
 
-int _write(int fd, void *buf, size_t count) {
+int _write(int fd, const void *buf, size_t count) {
   _exit(SYS_write);
   return 0;
 }
@@ -89,7 +89,7 @@ off_t _lseek(int fd, off_t offset, int whence) {
   return 0;
 }
 
-int _gettimeofday(struct timeval *tv, struct timezone *tz) {
+int _gettimeofday(struct timeval *tv, void *tz) {
   _exit(SYS_gettimeofday);
   return 0;
 }
