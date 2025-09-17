@@ -123,7 +123,7 @@ int snprintf(char *out, size_t n, const char *fmt, ...) {
 }
 
 int printf(const char *fmt, ...) {
-  char buffer[1024];
+  char buffer[4096];
   va_list ap;
   va_start(ap, fmt);
   int len = vsnprintf(buffer, sizeof(buffer), fmt, ap);
