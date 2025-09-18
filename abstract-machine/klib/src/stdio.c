@@ -85,6 +85,18 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
         out[written++] = c;
         break;
       }
+      case 'p': {
+        void *ptr = va_arg(ap, void *);
+        uintptr_t val = (uintptr_t)ptr;
+        if (written < n - 1) out[written++] = '0';
+        if (written < n - 1) out[written++] = 'x';
+        char temp[20];
+        int len = itoa(val, temp, 16);
+        for (int i = 0; i < len && written < n - 1; i++) {
+          out[written++] = temp[i];
+        }
+        break;
+      }
       case '%': {
         out[written++] = '%';
         break;
