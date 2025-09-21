@@ -7,11 +7,27 @@ static Context* (*user_handler)(Event, Context*) = NULL;
 Context* __am_irq_handle(Context *c) {
   if (user_handler) {
     Event ev = {0};
-    switch (c->mcause) {
-      case 8:
-      case 9:
-      case 11: ev.event = EVENT_YIELD; break;
-      default: ev.event = EVENT_ERROR; break;
+    mcause_t *mcause = (mcause_t *)&c->mcause;
+    if (mcause->intr) {
+      // Interrupt handlers
+      switch (mcause->code) {
+        case INTR_M_TIMR:
+          ev.event = EVENT_IRQ_TIMER; break;
+        default:
+          ev.event = EVENT_ERROR; break;
+      }
+    } else {
+      // Exception handlers
+      switch (mcause->code) {
+        case EXCP_U_ENV_CALL:
+        case EXCP_M_ENV_CALL:
+          switch (c->GPR1) {
+            case -1: ev.event = EVENT_YIELD; break;
+            default: ev.event = EVENT_SYSCALL; break;
+          }
+          break;
+        default: ev.event = EVENT_ERROR; break;
+      }
     }
 
     c = user_handler(ev, c);
