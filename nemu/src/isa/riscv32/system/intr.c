@@ -14,12 +14,14 @@
 ***************************************************************************************/
 
 #include <isa.h>
+#include "../local-include/reg.h"
 
 word_t isa_raise_intr(word_t NO, vaddr_t epc) {
-  // mstatus_t* mstatus = (mstatus_t*)&cpu.mstatus;
-  // mstatus->mpie = mstatus->mie;
-  // mstatus->mie = 0;
-  // mstatus->mpp = cpu.priv;
+  mstatus_t *mstatus = (mstatus_t *)&cpu.mstatus;
+  mstatus->mpie = mstatus->mie;
+  mstatus->mie = 0;
+  mstatus->mpp = cpu.priv;
+
   cpu.priv = MMODE;
   cpu.mcause = NO;
   cpu.mepc = epc;

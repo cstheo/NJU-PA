@@ -25,23 +25,24 @@
 #define Mw vaddr_write
 #define SHAMT(i) (i & 0x1f)
 
-static word_t ecall(vaddr_t epc) {
- switch(cpu.priv) {
-  case UMODE: return isa_raise_intr(8, epc);
-  case SMODE: return isa_raise_intr(9, epc);
-  case MMODE: return isa_raise_intr(11, epc);
-  default: panic("unknow privilege mode %d", cpu.priv);
- }
- return 0;
+static word_t ecall(word_t epc) {
+  int code;
+  switch (cpu.priv) {
+    case MMODE: code = EXCP_M_ENV_CALL; break;
+    case UMODE: code = EXCP_U_ENV_CALL; break;
+    default: panic("ecall for priv=%d not implemented", cpu.priv);
+  }
+  mcause_t mcause = (mcause_t){.intr = false, .code = code};
+  word_t *mcause_ptr = (word_t *)&mcause;
+  return isa_raise_intr(*mcause_ptr, epc);
 }
 #define ECALL(epc) ecall(epc)
 
 static vaddr_t mret() {
-  // mstatus_t* mstatus = (mstatus_t*)&cpu.mstatus;
-  // cpu.priv = mstatus->mpp;
-  // mstatus->mpp = UMODE;
-  // mstatus->mie = mstatus->mpie;
-  // mstatus->mpie = 1;
+  mstatus_t* mstatus = (mstatus_t*)&cpu.mstatus;
+  mstatus->mie = mstatus->mpie;
+  cpu.priv = mstatus->mpp;
+  mstatus->mpie = 1;
   return cpu.mepc + 4;
 }
 #define MRET() mret()

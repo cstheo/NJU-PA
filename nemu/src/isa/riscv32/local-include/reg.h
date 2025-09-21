@@ -26,13 +26,54 @@ static inline int check_reg_idx(int idx) {
 
 #define gpr(idx) (cpu.gpr[check_reg_idx(idx)])
 
-typedef struct
-{
-  word_t      : 1, sie  : 1,      : 1, mie  : 1,      : 1,
-         spie : 1, ube  : 1, mpie : 1, spp  : 1, vs   : 2,
-         mpp  : 2, fs   : 2, xs   : 2, mprv : 1, sum  : 1,
-         mxr  : 1, tvm  : 1, tw   : 1, tsr  : 1,      : 8, sd   : 1;
+typedef struct {
+  uintptr_t resv_0 : 1;
+  uintptr_t sie : 1;
+  uintptr_t resv_1 : 1;
+  uintptr_t mie : 1;
+  uintptr_t resv_2 : 1;
+  uintptr_t spie : 1;
+  uintptr_t resv_3 : 1;
+  uintptr_t mpie : 1;
+  uintptr_t spp : 1;
+  uintptr_t resv_4 : 2;
+  uintptr_t mpp : 2;
+  uintptr_t fs : 2;
+  uintptr_t xs : 2;
+  uintptr_t mprv : 1;
+  uintptr_t sum : 1;
+  uintptr_t mxr : 1;
+  uintptr_t tvm : 1;
+  uintptr_t tw : 1;
+  uintptr_t tsr : 1;
+#ifdef __ISA_RISCV64__
+  uintptr_t resv_5 : 40; // XLEN - 24
+#else
+  uintptr_t resv_5 : 8; // XLEN - 24
+#endif
+  uintptr_t sd : 1;
 } mstatus_t;
+
+typedef struct {
+#ifdef __ISA_RISCV64__
+  uintptr_t code : 63;
+#else
+  uintptr_t code : 31;
+#endif
+  uintptr_t intr : 1;
+} mcause_t;
+
+typedef struct {
+#ifdef __ISA_RISCV64__
+  uintptr_t ppn : 44;
+  uintptr_t asid : 16;
+  uintptr_t mode : 4;
+#else
+  uintptr_t ppn : 22;
+  uintptr_t asid : 9;
+  uintptr_t mode : 1;
+#endif
+} satp_t;
 
 static inline const char* reg_name(int idx) {
   extern const char* regs[];
