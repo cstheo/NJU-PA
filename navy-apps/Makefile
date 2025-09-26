@@ -85,8 +85,6 @@ INCFLAGS += $(addprefix -I, $(INC_PATH))
 
 CFLAGS   += -O2 -MMD $(INCFLAGS) -static -D__NAVY__ \
             -D__ISA__=\"$(ISA)\" -D__ISA_$(shell echo $(ISA) | tr a-z A-Z)__ \
-            -DMISSING_SYSCALL_NAMES -D_HAVE_LONG_DOUBLE -D_COMPILING_NEWLIB \
-            -D_NO_GETPASS \
             -fno-asynchronous-unwind-tables -fno-builtin -fno-stack-protector
 CXXFLAGS +=  $(CFLAGS) -fno-rtti -fno-exceptions
 ASFLAGS  +=  $(CFLAGS)

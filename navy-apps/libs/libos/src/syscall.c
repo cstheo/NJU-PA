@@ -45,6 +45,9 @@
 #error _syscall_ is not implemented
 #endif
 
+extern char _end;
+static void *prog_brk = &_end;
+
 intptr_t _syscall_(intptr_t type, intptr_t a0, intptr_t a1, intptr_t a2) {
   register intptr_t _gpr1 asm (GPR1) = type;
   register intptr_t _gpr2 asm (GPR2) = a0;
@@ -65,12 +68,17 @@ int _open(const char *path, int flags, mode_t mode) {
   return 0;
 }
 
-int _write(int fd, const void *buf, size_t count) {
-  _exit(SYS_write);
+int _write(int fd, void *buf, size_t count) {
+  _syscall_(SYS_write, fd, (intptr_t)buf, count);
   return 0;
 }
 
 void *_sbrk(intptr_t increment) {
+  void *const old_brk = prog_brk;
+  if (!_syscall_(SYS_brk, (intptr_t)(prog_brk + increment), 0, 0)) {
+    prog_brk += increment;
+    return old_brk;
+  }
   return (void *)-1;
 }
 
@@ -89,7 +97,7 @@ off_t _lseek(int fd, off_t offset, int whence) {
   return 0;
 }
 
-int _gettimeofday(struct timeval *tv, void *tz) {
+int _gettimeofday(struct timeval *tv, struct timezone *tz) {
   _exit(SYS_gettimeofday);
   return 0;
 }

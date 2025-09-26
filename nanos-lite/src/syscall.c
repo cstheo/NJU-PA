@@ -1,5 +1,6 @@
 #include <common.h>
 #include "syscall.h"
+#include "fs.h"
 
 #ifdef CONFIG_STRACE
 const char* syscall_names[] = {
@@ -24,9 +25,16 @@ static int sys_yield() {
   return 0;
 }
 
-static int sys_exit(int arg0) {
-  halt(arg0);
-  return 0;
+static void sys_exit(int status) {
+  halt(status);
+}
+
+static int sys_read(int fd, void *buf, size_t len) {
+  return fs_read(fd, buf, len);
+}
+
+static int sys_write(int fd, const void *buf, size_t count) {
+    return fs_write(fd, buf, count);
 }
 
 void do_syscall(Context *c) {
@@ -42,8 +50,11 @@ void do_syscall(Context *c) {
 
   uintptr_t r = 0;
   switch (a[0]) {
-    case SYS_exit: r = sys_exit(a[0]); break; 
+    case SYS_exit: sys_exit(a[1]); break; 
     case SYS_yield: r = sys_yield(); break;
+    case SYS_read: r = sys_read(a[1], (void *)a[2], a[3]); break;
+    case SYS_write: r = sys_write(a[1], (void *)a[2], a[3]); break;
+    case SYS_brk: r = 0; break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }
 

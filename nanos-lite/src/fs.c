@@ -31,6 +31,22 @@ static Finfo file_table[] __attribute__((used)) = {
 #include "files.h"
 };
 
+size_t fs_read(int fd, void *buf, size_t len) {
+  return 0;
+}
+
+size_t fs_write(int fd, const void *buf, size_t count) {
+  size_t len = 0;
+  char *ptr = (char *)buf;
+  if (fd == FD_STDOUT || fd == FD_STDERR) {
+    while (count--) {
+      putch(*ptr++);
+      len++;
+    }
+  }
+  return len;
+}
+
 void init_fs() {
   // TODO: initialize the size of /dev/fb
 }
