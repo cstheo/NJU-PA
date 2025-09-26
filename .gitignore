@@ -12,6 +12,5 @@
 !.gitignore
 !init.sh
 /nvboard
-/HDU-CPU
 /am-kernels
 /fceux-am

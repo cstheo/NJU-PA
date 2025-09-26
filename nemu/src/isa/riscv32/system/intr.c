@@ -17,6 +17,15 @@
 #include "../local-include/reg.h"
 
 word_t isa_raise_intr(word_t NO, vaddr_t epc) {
+#ifdef CONFIG_ETRACE
+  mcause_t *mcause = (mcause_t *)&cpu.mcause;
+  Log("%s " FMT_WORD "; mepc=" FMT_WORD "; mtvec=" FMT_WORD "; mstatus=" FMT_WORD,
+    mcause->intr ? "INTR" : "EXCP",
+    mcause->code,
+    epc,
+    cpu.mtvec,
+    cpu.mstatus);
+#endif
   mstatus_t *mstatus = (mstatus_t *)&cpu.mstatus;
   mstatus->mpie = mstatus->mie;
   mstatus->mie = 0;
