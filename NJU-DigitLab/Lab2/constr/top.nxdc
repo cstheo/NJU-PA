@@ -1,8 +1,0 @@
-top=encode83
-
-en (SW0)
-x (SW8, SW7, SW6, SW5, SW4, SW3, SW2, SW1)
-
-f (LD0)
-y (LD3, LD2, LD1)
-h (SEG0G, SEG0F, SEG0E, SEG0D, SEG0C, SEG0B, SEG0A)
